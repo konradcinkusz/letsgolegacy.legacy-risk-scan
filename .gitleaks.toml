@@ -1,0 +1,19 @@
+# gitleaks configuration — legacy-risk-scan
+#
+# Runs in two places, deliberately (P5 / REPO-BASELINE.md §2):
+#   • pre-commit hook (scripts/hooks/pre-commit) — catches the mistake before it is history;
+#   • CI job (.github/workflows/secret-scan.yml)  — catches contributors without hooks.
+#
+# This repository holds no secrets: it is a static page plus build scripts, and every
+# API it talks to (OSV.dev, endoflife.date) is public and unauthenticated. The upstream
+# rule set is here to catch a credential that has no business being here at all. The
+# first secret this repository ever legitimately needs gets its own rule in the same
+# commit that introduces it.
+#
+# If a secret does land here: ROTATE FIRST, clean history second. The repository is
+# public; a pushed commit is disclosed the moment it is pushed.
+
+title = "legacy-risk-scan secret scanning"
+
+[extend]
+useDefault = true

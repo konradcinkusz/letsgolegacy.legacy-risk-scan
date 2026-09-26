@@ -1,0 +1,21 @@
+# REPO-BASELINE.md §1 (architecture-standards): formatting is settled by a file, not by
+# whichever editor touched the code last.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Two trailing spaces are a Markdown line break; trimming them would reflow prose.
+[*.md]
+trim_trailing_whitespace = false
+
+# MSBuild and NuGet files in samples/ and test fixtures reproduce what Visual Studio
+# writes, including its CRLF-free but otherwise verbatim layout.
+[*.{csproj,vbproj,props,config}]
+indent_size = 2

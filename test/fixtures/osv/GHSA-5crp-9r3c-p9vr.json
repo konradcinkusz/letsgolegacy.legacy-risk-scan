@@ -1,0 +1,13 @@
+{
+  "id": "GHSA-5crp-9r3c-p9vr",
+  "summary": "Improper Handling of Exceptional Conditions in Newtonsoft.Json",
+  "details": "Newtonsoft.Json prior to version 13.0.1 is subject to Insecure Defaults due to improper handling of expressions with high nesting level that lead to StackOverFlow exception or high CPU and RAM usage.",
+  "aliases": ["CVE-2024-21907"],
+  "database_specific": { "severity": "HIGH", "github_reviewed": true },
+  "affected": [
+    {
+      "package": { "ecosystem": "NuGet", "name": "Newtonsoft.Json" },
+      "ranges": [{ "type": "ECOSYSTEM", "events": [{ "introduced": "0" }, { "fixed": "13.0.1" }] }]
+    }
+  ]
+}

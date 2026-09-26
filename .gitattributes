@@ -1,0 +1,14 @@
+# A real .gitattributes (REPO-BASELINE.md §1): normalise line endings on the way in and
+# check out LF everywhere. A CRLF in a shell script fails with "bad interpreter".
+* text=auto eol=lf
+
+*.sh      text eol=lf
+*.mjs     text eol=lf
+*.js      text eol=lf
+*.json    text eol=lf
+*.csproj  text eol=lf
+*.config  text eol=lf
+
+# Binary assets are never diffed or normalised.
+*.png     binary
+*.ico     binary

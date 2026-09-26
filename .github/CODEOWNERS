@@ -1,0 +1,8 @@
+# REPO-BASELINE.md §1: the machine-readable answer to "who reviews this".
+
+*                       @konradcinkusz
+
+# What the page sends over the network, and what CI is allowed to push, are the two
+# places where an unreviewed change would break the privacy promise the page makes.
+/src/lib/osv.js         @konradcinkusz
+/.github/workflows/     @konradcinkusz

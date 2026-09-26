@@ -1,0 +1,12 @@
+{
+  "id": "GHSA-rmxg-73gg-4p98",
+  "summary": "Cross-Site Scripting (XSS) in jquery",
+  "aliases": ["CVE-2015-9251", "CVE-2017-16012"],
+  "database_specific": { "severity": "MODERATE" },
+  "affected": [
+    {
+      "package": { "ecosystem": "npm", "name": "jquery" },
+      "ranges": [{ "type": "SEMVER", "events": [{ "introduced": "0" }, { "fixed": "3.0.0" }] }]
+    }
+  ]
+}

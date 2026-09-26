@@ -1,0 +1,33 @@
+# Dependency update automation — REPO-BASELINE.md §1.
+#
+# npm: development tooling only (Playwright, axe). The page itself ships no third-party
+# code — it is plain ES modules served as-is — so nothing here reaches a visitor.
+# github-actions: the other pinned third-party code in the tree.
+
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+    groups:
+      dev-tooling:
+        patterns: ['*']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(ci)(deps)'
+    groups:
+      github-actions:
+        patterns: ['*']

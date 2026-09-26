@@ -1,0 +1,21 @@
+{
+    "name": "firma/magazyn",
+    "type": "project",
+    "require": {
+        "php": "^7.1.3",
+        "ext-mbstring": "*",
+        "ext-pdo": "*",
+        "laravel/framework": "5.6.*",
+        "guzzlehttp/guzzle": "~6.0",
+        "monolog/monolog": "^1.23 || ^2.0",
+        "firma/wewnetrzny-modul": "dev-master",
+        "symfony/process": ">4.0",
+        "Doctrine/DBAL": "v2.8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7.0"
+    },
+    "config": {
+        "platform": { "php": "7.1.33" }
+    }
+}

@@ -1,0 +1,143 @@
+name: Update end-of-life data
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  data/eol.json is generated, never edited by hand; this workflow is its only writer.
+#
+#  refresh  (monthly, or on demand)
+#     regenerate from endoflife.date → run the unit tests against the new data → open or
+#     update a pull request from automation/update-eol-data. Pull requests opened with
+#     GITHUB_TOKEN do not trigger other workflows, so the tests run HERE, before the pull
+#     request exists, and the PR body links to this run.
+#     Needs, once: Settings → Actions → General → Workflow permissions → "Allow GitHub
+#     Actions to create and approve pull requests". Without it the branch is still pushed
+#     and the run fails with a message saying so.
+#
+#  sync-pr  (a pull request that touches the generator or the data)
+#     regenerate with the pull request's generator and commit the result to its branch if
+#     the content differs, so a generator change never merges without its data. A fork's
+#     branch cannot be written to; there the job fails if the data is stale.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  schedule:
+    - cron: '17 5 1 * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/update-eol.mjs'
+      - 'scripts/lib/eol-source.mjs'
+      - 'data/eol.json'
+      - '.github/workflows/update-eol.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-eol-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Refresh from endoflife.date and propose a pull request
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - run: npm ci
+
+      - name: Regenerate data/eol.json
+        run: node scripts/update-eol.mjs
+
+      - name: Unit tests against the new data
+        run: npm test
+
+      - name: Open or update the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- data/eol.json; then
+            echo "data/eol.json unchanged — nothing to propose."
+            exit 0
+          fi
+          date="$(node -p "require('./data/eol.json').generatedAt")"
+          branch="automation/update-eol-data"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add data/eol.json
+          git commit -m "chore(data): refresh end-of-life data from endoflife.date (${date})"
+          git push --force origin "$branch"
+          body="$(cat <<BODY
+          Monthly refresh of \`data/eol.json\` from the public [endoflife.date](https://endoflife.date) API, produced by \`scripts/update-eol.mjs\`.
+
+          - The unit tests ran against this data in the run that opened this pull request: ${RUN_URL} (a pull request opened by GITHUB_TOKEN does not trigger CI by itself).
+          - The run summary lists the support dates most likely to be quoted to a customer; read them in the diff, endoflife.date is the authority.
+          - If only \`generatedAt\` changed, the data was re-checked and is otherwise identical.
+          BODY
+          )"
+          if [ "$(gh pr view "$branch" --json state --jq .state 2>/dev/null || true)" = "OPEN" ]; then
+            gh pr edit "$branch" --body "$body"
+          elif ! gh pr create --base "$GITHUB_REF_NAME" --head "$branch" \
+              --title "Odświeżenie danych EOL (endoflife.date, ${date})" --body "$body"; then
+            echo "::error::Could not open the pull request. Enable Settings → Actions → General → 'Allow GitHub Actions to create and approve pull requests', or open it by hand: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${GITHUB_REF_NAME}...${branch}"
+            exit 1
+          fi
+
+  sync-pr:
+    name: Regenerate data for this pull request
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - run: npm ci
+
+      - name: Regenerate (keeping the date when nothing else changed)
+        run: node scripts/update-eol.mjs --keep-date-if-unchanged
+
+      - name: Unit tests against the regenerated data
+        run: npm test
+
+      - name: Commit to the pull request branch
+        if: env.SAME_REPO == 'true'
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain -- data/eol.json)" ]; then
+            echo "data/eol.json is in sync with the generator."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/eol.json
+          git commit -m "chore(data): regenerate data/eol.json from endoflife.date"
+          git push origin "HEAD:refs/heads/${HEAD_REF}"
+          echo "::notice::data/eol.json regenerated and committed to ${HEAD_REF}. A commit pushed by GITHUB_TOKEN does not re-run CI; the next push to the branch will."
+
+      - name: A fork's branch cannot be written to
+        if: env.SAME_REPO != 'true'
+        run: |
+          if [ -n "$(git status --porcelain -- data/eol.json)" ]; then
+            echo "::error::data/eol.json does not match the generator in this pull request. Run: npm run update-eol"
+            exit 1
+          fi

@@ -1,0 +1,95 @@
+{
+  "_comment": "Hand-written TEST FIXTURE in the data/eol.json schema. Its dates are illustrative inputs for logic tests, not a source of truth; the page reads data/eol.json, generated from endoflife.date by scripts/update-eol.mjs.",
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-01",
+  "source": { "name": "test fixture" },
+  "products": {
+    "dotnetfx": {
+      "label": ".NET Framework",
+      "link": "https://endoflife.date/dotnetfx",
+      "cycles": [
+        { "name": "4.8.1", "label": "4.8.1", "releaseDate": "2022-08-09", "lts": false, "eoas": null, "eol": false, "eoes": null, "latest": null },
+        { "name": "4.8", "label": "4.8", "releaseDate": "2019-04-18", "lts": false, "eoas": null, "eol": false, "eoes": null, "latest": null },
+        { "name": "4.6.2", "label": "4.6.2", "releaseDate": "2016-08-02", "lts": false, "eoas": null, "eol": "2027-01-12", "eoes": null, "latest": null },
+        { "name": "4.6.1", "label": "4.6.1", "releaseDate": "2015-11-30", "lts": false, "eoas": null, "eol": "2022-04-26", "eoes": null, "latest": null },
+        { "name": "4.5.2", "label": "4.5.2", "releaseDate": "2014-05-05", "lts": false, "eoas": null, "eol": "2022-04-26", "eoes": null, "latest": null },
+        { "name": "4.5.1", "label": "4.5.1", "releaseDate": "2013-10-17", "lts": false, "eoas": null, "eol": "2016-01-12", "eoes": null, "latest": null },
+        { "name": "4.5", "label": "4.5", "releaseDate": "2012-08-15", "lts": false, "eoas": null, "eol": "2016-01-12", "eoes": null, "latest": null },
+        { "name": "4", "label": "4.0", "releaseDate": "2010-04-12", "lts": false, "eoas": null, "eol": "2016-01-12", "eoes": null, "latest": null }
+      ]
+    },
+    "dotnet": {
+      "label": ".NET",
+      "link": "https://endoflife.date/dotnet",
+      "cycles": [
+        { "name": "10", "label": "10", "releaseDate": "2025-11-11", "lts": true, "eoas": null, "eol": "2028-11-14", "eoes": null, "latest": null },
+        { "name": "9", "label": "9", "releaseDate": "2024-11-12", "lts": false, "eoas": null, "eol": "2026-11-10", "eoes": null, "latest": null },
+        { "name": "8", "label": "8", "releaseDate": "2023-11-14", "lts": true, "eoas": null, "eol": "2026-11-10", "eoes": null, "latest": null },
+        { "name": "6", "label": "6", "releaseDate": "2021-11-08", "lts": true, "eoas": null, "eol": "2024-11-12", "eoes": null, "latest": null },
+        { "name": "3.1", "label": "3.1", "releaseDate": "2019-12-03", "lts": true, "eoas": null, "eol": "2022-12-13", "eoes": null, "latest": null }
+      ]
+    },
+    "php": {
+      "label": "PHP",
+      "link": "https://endoflife.date/php",
+      "cycles": [
+        { "name": "8.4", "label": "8.4", "releaseDate": "2024-11-21", "lts": false, "eoas": "2026-12-31", "eol": "2028-12-31", "eoes": null, "latest": null },
+        { "name": "8.2", "label": "8.2", "releaseDate": "2022-12-08", "lts": false, "eoas": "2024-12-31", "eol": "2026-12-31", "eoes": null, "latest": null },
+        { "name": "7.4", "label": "7.4", "releaseDate": "2019-11-28", "lts": false, "eoas": "2021-11-28", "eol": "2022-11-28", "eoes": null, "latest": null },
+        { "name": "7.1", "label": "7.1", "releaseDate": "2016-12-01", "lts": false, "eoas": "2018-12-01", "eol": "2019-12-01", "eoes": null, "latest": null }
+      ]
+    },
+    "nodejs": {
+      "label": "Node.js",
+      "link": "https://endoflife.date/nodejs",
+      "cycles": [
+        { "name": "22", "label": "22", "releaseDate": "2024-04-24", "lts": true, "eoas": "2025-10-21", "eol": "2027-04-30", "eoes": null, "latest": null },
+        { "name": "10", "label": "10", "releaseDate": "2018-04-24", "lts": true, "eoas": "2020-05-19", "eol": "2021-04-30", "eoes": null, "latest": null }
+      ]
+    },
+    "jquery": {
+      "label": "jQuery",
+      "link": "https://endoflife.date/jquery",
+      "cycles": [
+        { "name": "4", "label": "4", "releaseDate": null, "lts": false, "eoas": null, "eol": false, "eoes": null, "latest": null },
+        { "name": "3", "label": "3", "releaseDate": null, "lts": false, "eoas": null, "eol": false, "eoes": null, "latest": null },
+        { "name": "2", "label": "2", "releaseDate": null, "lts": false, "eoas": null, "eol": true, "eoes": null, "latest": null },
+        { "name": "1", "label": "1", "releaseDate": null, "lts": false, "eoas": null, "eol": true, "eoes": null, "latest": null }
+      ]
+    },
+    "angularjs": {
+      "label": "AngularJS",
+      "link": "https://endoflife.date/angularjs",
+      "cycles": [
+        { "name": "1", "label": "1", "releaseDate": null, "lts": false, "eoas": null, "eol": "2021-12-31", "eoes": null, "latest": null }
+      ]
+    },
+    "laravel": {
+      "label": "Laravel",
+      "link": "https://endoflife.date/laravel",
+      "cycles": [
+        { "name": "12", "label": "12", "releaseDate": "2025-02-24", "lts": false, "eoas": "2026-08-13", "eol": "2027-02-24", "eoes": null, "latest": null },
+        { "name": "5.6", "label": "5.6", "releaseDate": "2018-02-07", "lts": false, "eoas": "2018-08-07", "eol": "2019-02-07", "eoes": null, "latest": null },
+        { "name": "5.5", "label": "5.5", "releaseDate": "2017-08-30", "lts": true, "eoas": "2019-08-30", "eol": "2020-08-30", "eoes": null, "latest": null }
+      ]
+    },
+    "mssqlserver": {
+      "label": "Microsoft SQL Server",
+      "link": "https://endoflife.date/mssqlserver",
+      "cycles": [
+        { "name": "2022", "label": "2022", "releaseDate": "2022-11-16", "lts": false, "eoas": "2028-01-11", "eol": "2033-01-11", "eoes": false, "latest": null },
+        { "name": "2016", "label": "2016", "releaseDate": "2016-06-01", "lts": false, "eoas": "2021-07-13", "eol": "2026-07-14", "eoes": "2029-07-10", "latest": null },
+        { "name": "2014", "label": "2014", "releaseDate": "2014-06-05", "lts": false, "eoas": "2019-07-09", "eol": "2024-07-09", "eoes": "2025-07-08", "latest": null }
+      ]
+    },
+    "windows-server": {
+      "label": "Windows Server",
+      "link": "https://endoflife.date/windows-server",
+      "cycles": [
+        { "name": "2022", "label": "2022", "releaseDate": "2021-08-18", "lts": true, "eoas": "2026-10-13", "eol": "2031-10-14", "eoes": null, "latest": null },
+        { "name": "2012-r2", "label": "2012 R2", "releaseDate": "2013-10-18", "lts": true, "eoas": "2018-10-09", "eol": "2023-10-10", "eoes": "2026-10-13", "latest": null }
+      ]
+    }
+  },
+  "unavailable": ["bootstrap"]
+}
