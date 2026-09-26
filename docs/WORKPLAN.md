@@ -9,9 +9,9 @@ Ticket ID matches the cross-repository backlog.
 
 | ID | Deliverable | Done when | Status |
 |---|---|---|---|
-| L18 | Paste `.csproj` / `packages.config` / `composer.json` → EOL and CVE report → call to action for an audit | The public page returns a report for the sample file | in review — #1, #2 |
+| L18 | Paste `.csproj` / `packages.config` / `composer.json` → EOL and CVE report → call to action for an audit | The public page returns a report for the sample file | merged (#1, #2); done when `deploy.yml`'s `verify` job passes — waiting on step 1 below |
 
-### L18 — what remains after review
+### L18 — what remains after the merge
 
 Implemented in two stacked pull requests: #1 (engine, end-of-life data pipeline,
 baseline) and #2 (the page, deployment, end-to-end tests). Checked in CI before review:
@@ -20,7 +20,8 @@ browser, and OSV answers CORS for the published origin. Not yet checked: the pub
 page itself, which does not exist until the steps below.
 
 1. *Settings → Pages → Build and deployment → Source → GitHub Actions* (one time).
-2. Merge #1, then #2.
+2. ~~Merge #1, then #2.~~ Done on 26 IX 2026. The first `deploy.yml` run on `main` failed at
+   `configure-pages` with a 404, as expected before step 1.
 3. The push to `main` runs `deploy.yml`. Its `verify` job loads the **published** page,
    runs the sample against the real OSV API and keeps a full-page screenshot
    (artifact `live-verification`). When it passes, the "done when" is met: mark L18
