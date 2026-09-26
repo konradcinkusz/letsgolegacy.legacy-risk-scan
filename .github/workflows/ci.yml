@@ -2,10 +2,14 @@ name: CI
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  unit       — parsers, end-of-life mapping, OSV client, report; every PR and push.
-#  smoke-osv  — the REAL OSV API: CORS for the published origin, and the advisory the
-#               sample file is built to show. Blocking, except when OSV cannot be reached
-#               at all: a network error says nothing about this repository, so it is a
-#               warning; OSV answering differently from what the page assumes is a failure.
+#  e2e        — Playwright against the built site, OSV mocked: the sample produces a
+#               report with an end-of-life item and an advisory; privacy, errors,
+#               keyboard, phone width, accessibility (axe) in light and dark.
+#  smoke-osv  — the REAL OSV API: CORS for the published origin and the advisory the
+#               sample is built to show (node), then the page itself in a real browser
+#               against real OSV. Blocking, except when OSV cannot be reached at all: a
+#               network error says nothing about this repository, so it is a warning;
+#               OSV answering differently from what the page assumes is a failure.
 #
 #  The weekly run exists because OSV can change under an unchanged repository.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -38,10 +42,31 @@ jobs:
       - run: npm ci
       - run: npm test
 
+  e2e:
+    name: End-to-end (Playwright, OSV mocked)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: e2e-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
   smoke-osv:
     name: Smoke — real OSV API (non-blocking only for network errors)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -50,3 +75,26 @@ jobs:
       - name: CORS and contract against api.osv.dev
         id: osv
         run: node scripts/smoke-osv.mjs
+
+      - name: Browser tooling
+        if: steps.osv.outputs.reachable == 'true'
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: The built page against real OSV, in a real browser (CORS enforced)
+        if: steps.osv.outputs.reachable == 'true'
+        env:
+          LIVE_SCREENSHOT: test-results/smoke-report.png
+        run: |
+          npm run build
+          npm run e2e:live
+
+      - uses: actions/upload-artifact@v7
+        if: always() && steps.osv.outputs.reachable == 'true'
+        with:
+          name: smoke-report
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 14

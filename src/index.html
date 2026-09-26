@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!--
+    Privacy by construction: the browser itself refuses any connection other than to this
+    page's own origin and to api.osv.dev, and loads no script, style or font from anywhere
+    else. No inline scripts or styles, so none can be injected either.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://api.osv.dev; base-uri 'none'; form-action 'none'; manifest-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>Legacy Risk Scan — koniec wsparcia i podatności w Twojej aplikacji | Let's go Legacy</title>
+  <meta name="description" content="Wklej plik projektu .NET, packages.config, composer.json albo package.json i sprawdź, które elementy aplikacji straciły wsparcie producenta i mają znane podatności. Plik jest analizowany w przeglądarce.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Przejdź do treści</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <p class="brand">Let's go Legacy</p>
+    </div>
+  </header>
+
+  <main id="main" class="wrap" tabindex="-1">
+    <section class="intro" aria-labelledby="page-title">
+      <h1 id="page-title">Legacy Risk Scan</h1>
+      <p class="lead">Sprawdź, które elementy Twojej aplikacji straciły wsparcie producenta i które mają znane luki bezpieczeństwa. Wklej plik projektu — raport zobaczysz po kilku sekundach.</p>
+      <p class="formats">Obsługiwane pliki: <code>.csproj</code> (także w klasycznym formacie sprzed .NET Core), <code>packages.config</code>, <code>composer.json</code>, <code>composer.lock</code> i <code>package.json</code>.</p>
+    </section>
+
+    <section class="privacy" aria-labelledby="privacy-title">
+      <h2 id="privacy-title">Twój plik zostaje u Ciebie</h2>
+      <p>Plik jest analizowany wyłącznie w Twojej przeglądarce — nie wysyłamy go na żaden serwer. Do publicznej bazy podatności <a href="https://osv.dev">OSV.dev</a> trafiają tylko nazwy pakietów i ich wersje, np. „NuGet · Newtonsoft.Json · 6.0.4”. Nazwa pliku, nazwa projektu, ścieżki i reszta treści nie opuszczają Twojego komputera.</p>
+      <p>Strona nie używa analityki, plików cookie ani pamięci przeglądarki.</p>
+      <details>
+        <summary>Szczegóły techniczne</summary>
+        <p>Przeglądarka wysyła do api.osv.dev jedno zapytanie z listą pakietów (ekosystem, nazwa, wersja), a potem pobiera opisy znalezionych podatności po ich identyfikatorach, np. GHSA-5crp-9r3c-p9vr — te identyfikatory pochodzą z odpowiedzi OSV, nie z Twojego pliku.</p>
+        <p>Stronę udostępnia GitHub Pages, a zapytania do api.osv.dev wysyła bezpośrednio Twoja przeglądarka — obie usługi, jak każdy serwer, widzą adres IP połączenia. Polityka bezpieczeństwa treści (Content-Security-Policy) tej strony pozwala na połączenia wyłącznie z nią samą i z api.osv.dev. Kod strony jest publiczny: <a href="https://github.com/konradcinkusz/letsgolegacy.legacy-risk-scan">github.com/konradcinkusz/letsgolegacy.legacy-risk-scan</a>.</p>
+      </details>
+    </section>
+
+    <form id="scan-form" class="scan-form" novalidate>
+      <div class="field">
+        <label for="manifest">Zawartość pliku</label>
+        <p class="hint" id="manifest-hint">Wklej całą zawartość pliku albo wybierz go z dysku poniżej.</p>
+        <textarea id="manifest" name="manifest" rows="14" spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="manifest-hint" placeholder="&lt;Project ToolsVersion=&quot;12.0&quot; …&gt;"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="file">…albo wybierz plik z dysku</label>
+        <input type="file" id="file" name="file" accept=".csproj,.vbproj,.fsproj,.props,.config,.json,.lock">
+      </div>
+
+      <fieldset class="servers">
+        <legend>Serwery <span class="optional">(opcjonalnie)</span></legend>
+        <p class="hint">Jeśli wiesz, na czym działa aplikacja, wskaż wersje — dołączymy je do raportu.</p>
+        <div class="field-row">
+          <div class="field">
+            <label for="mssqlserver">Microsoft SQL Server</label>
+            <select id="mssqlserver" name="mssqlserver">
+              <option value="">— nie uwzględniaj —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="windows-server">Windows Server</label>
+            <select id="windows-server" name="windows-server">
+              <option value="">— nie uwzględniaj —</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <p id="scan-error" class="message error" role="alert" hidden></p>
+
+      <div class="actions">
+        <button type="submit" id="submit" class="button primary">Sprawdź plik</button>
+        <button type="button" id="sample" class="button secondary">Wypróbuj na przykładzie</button>
+      </div>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </form>
+
+    <section id="report" class="report" aria-labelledby="report-title" hidden>
+      <h2 id="report-title" tabindex="-1">Raport</h2>
+      <p id="report-meta" class="report-meta"></p>
+
+      <div id="osv-warning" class="message warning" hidden>
+        <p>Nie udało się połączyć z bazą podatności OSV. Raport pokazuje tylko terminy końca wsparcia, a pakiety, których nie dało się sprawdzić, oznaczono jako „Nieustalone”.</p>
+        <button type="button" id="retry" class="button secondary">Sprawdź podatności ponownie</button>
+      </div>
+
+      <h3 class="visually-hidden">Podsumowanie</h3>
+      <ul id="summary" class="summary"></ul>
+      <p id="summary-note" class="summary-note"></p>
+      <p id="attention" class="attention"></p>
+
+      <section class="meaning" aria-labelledby="meaning-title">
+        <h3 id="meaning-title">Co to oznacza dla firmy</h3>
+        <div id="meaning"></div>
+      </section>
+
+      <section id="platform-section" aria-labelledby="platform-title">
+        <h3 id="platform-title">Platforma</h3>
+        <div id="platform"></div>
+      </section>
+
+      <section id="dependencies-section" aria-labelledby="dependencies-title">
+        <h3 id="dependencies-title">Zależności</h3>
+        <div id="dependencies"></div>
+      </section>
+
+      <section id="hints-section" aria-labelledby="hints-title" hidden>
+        <h3 id="hints-title">Uwagi do pliku</h3>
+        <ul id="hints" class="hints"></ul>
+      </section>
+
+      <p class="actions print-hidden">
+        <button type="button" id="print" class="button secondary">Drukuj lub zapisz jako PDF</button>
+      </p>
+    </section>
+
+    <section class="cta" aria-labelledby="cta-title">
+      <h2 id="cta-title">Zamów audyt Second Key</h2>
+      <p id="cta-attention" class="cta-attention" hidden></p>
+      <p>Ten raport pokazuje tylko to, co widać w jednym pliku. W audycie Second Key przeglądamy cały system — kod, bazę danych, serwery i sposób wdrażania zmian — i przygotowujemy plan: co zaktualizować, co przebudować i w jakiej kolejności.</p>
+      <!-- TODO(L17): the company's domain and contact e-mail do not exist yet. Replace this
+           placeholder with the real contact details once L17 delivers them; until then the
+           page must not show an invented address. -->
+      <p class="contact" data-todo="L17"><strong>Kontakt:</strong> wkrótce.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>Dane o końcu wsparcia: <a href="https://endoflife.date">endoflife.date</a> (licencja MIT), stan na <span id="data-date">—</span>. Dane o podatnościach: <a href="https://osv.dev">OSV.dev</a>, pobierane w chwili sprawdzania.</p>
+      <p>Raport ma charakter informacyjny i nie zastępuje audytu bezpieczeństwa.</p>
+      <p>Let's go Legacy · <a href="https://github.com/konradcinkusz/letsgolegacy.legacy-risk-scan">kod źródłowy strony</a></p>
+    </div>
+  </footer>
+</body>
+</html>

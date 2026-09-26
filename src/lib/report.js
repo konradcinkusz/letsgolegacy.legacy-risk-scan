@@ -17,6 +17,7 @@ import { assessVersion, assessCycle } from './eol.js';
 import { coordinateKey, summarizeVulnerability, mergeAdvisories, uniqueCoordinates } from './osv.js';
 import { productForPackage } from './known-libraries.js';
 import { numericParts } from './versions.js';
+import { cleanServerLabel, servicePackOf } from './servers.js';
 
 export const STATUS_ORDER = ['eol', 'vulnerable', 'eol-soon', 'unknown', 'ok'];
 
@@ -100,10 +101,11 @@ function runtimeItem(rt, eolData, today) {
 function infraItem(productId, cycleName, eolData, today) {
   const eol = assessCycle(eolData, productId, cycleName, today);
   const label = eolData?.products?.[productId]?.label ?? productId;
+  const servicePack = eol ? servicePackOf(eol.cycleLabel) : null;
   return {
     kind: 'infrastructure',
     name: label,
-    version: eol?.cycleLabel ?? cycleName,
+    version: eol ? cleanServerLabel(eol.cycleLabel) : cycleName,
     spec: null,
     versionKind: 'exact',
     source: { origin: 'form', value: cycleName },
@@ -112,7 +114,11 @@ function infraItem(productId, cycleName, eolData, today) {
     advisoryState: 'not-applicable',
     advisories: [],
     assessed: Boolean(eol),
-    notes: [...(eol ? [] : [{ code: 'EOL_NO_DATA', params: { product: label } }]), ...eolNotes(eol, today)],
+    notes: [
+      ...(eol ? [] : [{ code: 'EOL_NO_DATA', params: { product: label } }]),
+      ...(servicePack ? [{ code: 'INFRA_SERVICE_PACK', params: { sp: servicePack } }] : []),
+      ...eolNotes(eol, today),
+    ],
   };
 }
 

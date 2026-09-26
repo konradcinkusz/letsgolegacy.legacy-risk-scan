@@ -78,8 +78,8 @@ const HINTS = {
   HINT_CPM:
     'Pakiety bez wersji w tym pliku: {count}. Zwykle oznacza to centralne zarządzanie wersjami — wklej plik Directory.Packages.props, aby je sprawdzić.',
   HINT_FRAMEWORK_REFERENCES:
-    'Pominięto referencje do bibliotek wchodzących w skład .NET Framework (np. System.Web): {count}. Ich wsparcie wynika z wersji samego frameworka.',
-  HINT_PROJECT_REFERENCES: 'Projekt odwołuje się do innych projektów w rozwiązaniu ({count}). Sprawdź także ich pliki .csproj.',
+    'Pominięto {count} {references} do bibliotek wchodzących w skład .NET Framework (np. System.Web) — ich wsparcie wynika z wersji samego frameworka.',
+  HINT_PROJECT_REFERENCES: 'Projekt odwołuje się do {count} {projects} w tym samym rozwiązaniu. Sprawdź także {their} .csproj.',
   HINT_PACKAGES_CONFIG_FRAMEWORK:
     'Wersję .NET Framework odczytano z atrybutu targetFramework w packages.config. To wersja z chwili instalacji pakietów — projekt mógł zostać później przeniesiony na nowszą.',
   HINT_COMPOSER_CONSTRAINTS:
@@ -92,6 +92,11 @@ const HINTS = {
 export function hintText(hint) {
   const params = { ...(hint.params ?? {}) };
   if (Array.isArray(params.names)) params.names = params.names.join(', ');
+  if (typeof params.count === 'number') {
+    params.references = plural(params.count, ['referencję', 'referencje', 'referencji']);
+    params.projects = plural(params.count, ['innego projektu', 'innych projektów', 'innych projektów']);
+    params.their = params.count === 1 ? 'jego plik' : 'ich pliki';
+  }
   return fill(HINTS[hint.code] ?? '', params);
 }
 
@@ -105,6 +110,7 @@ const NOTES = {
   EOL_ESU_ENDED: 'Płatne rozszerzone aktualizacje bezpieczeństwa (ESU) również się zakończyły ({date}).',
   EOL_SECURITY_ONLY: 'Od {date} wydawane są już tylko poprawki bezpieczeństwa.',
   EOL_NO_DATE: 'Producent nie ogłosił daty końca wsparcia.',
+  INFRA_SERVICE_PACK: 'Terminy dotyczą ostatniego dodatku Service Pack ({sp}); instalacje ze starszym dodatkiem straciły wsparcie wcześniej.',
   RUNTIME_NETSTANDARD: '.NET Standard to specyfikacja API, a nie środowisko uruchomieniowe — nie ma własnej daty końca wsparcia.',
   RUNTIME_MINIMUM: 'Najniższa wersja dopuszczona przez ograniczenie {spec}. Na serwerze może działać nowsza — warto to sprawdzić.',
   RUNTIME_PLATFORM_OVERRIDE: 'Wersja ustawiona w konfiguracji Composera (config.platform): zależności dobrano tak, jakby aplikacja działała na niej.',
@@ -123,9 +129,9 @@ const NOTES = {
   VERSION_PACKAGE_FOLDER_NO_VERSION: 'Nie da się odczytać wersji ze ścieżki {path} (katalog pakietu bez numeru wersji).',
   VERSION_LOWEST: 'Ograniczenie {spec} — sprawdzono najniższą dopuszczalną wersję {version}.',
   SOURCE_MANUAL_DLL:
-    'Biblioteka dołączona ręcznie jako plik DLL ({path}), poza menedżerem pakietów — nikt jej automatycznie nie aktualizuje. Wymaga ręcznej weryfikacji.',
-  SOURCE_GAC: 'Komponent instalowany w systemie (GAC), wersja zestawu {version}. Wymaga ręcznej weryfikacji.',
-  SOURCE_SCRIPT: 'Wykryto po nazwie pliku {path}. Podatności sprawdzono dla pakietu npm o tej nazwie.',
+    'Biblioteka dołączona ręcznie jako plik DLL, poza menedżerem pakietów — nikt jej automatycznie nie aktualizuje. Wymaga ręcznej weryfikacji.',
+  SOURCE_GAC: 'Komponent instalowany w systemie (GAC), spoza menedżera pakietów. Wymaga ręcznej weryfikacji.',
+  SOURCE_SCRIPT: 'Wykryto po nazwie pliku skryptu; podatności sprawdzono dla pakietu npm o tej nazwie.',
   ALSO_NPM: 'Biblioteka JavaScript — podatności sprawdzono także dla pakietu npm „{name}”, pod którym zwykle są zgłaszane.',
   DEV_DEPENDENCY: 'Zależność używana tylko przy tworzeniu i budowaniu aplikacji.',
   OSV_UNAVAILABLE: 'Podatności nie sprawdzono — brak połączenia z bazą OSV.',
@@ -203,3 +209,83 @@ export function attentionSentence(count) {
   }[plural(count, ['one', 'few', 'many'])];
   return `Raport wskazuje ${count} ${noun} ${adjective} uwagi.`;
 }
+
+// ── Where a row came from ───────────────────────────────────────────────────
+
+const SOURCE_LABELS = {
+  TargetFrameworkVersion: 'TargetFrameworkVersion: {value}',
+  TargetFramework: 'TargetFramework: {value}',
+  TargetFrameworks: 'TargetFrameworks: {value}',
+  'packages-config': 'packages.config',
+  'package-reference': 'PackageReference',
+  'package-reference-update': 'PackageReference (Update)',
+  'package-version': 'PackageVersion',
+  hintpath: 'HintPath: {value}',
+  'manual-dll': 'HintPath: {value}',
+  gac: 'Reference (GAC)',
+  script: 'plik {value}',
+  require: 'require: {value}',
+  'require-dev': 'require-dev: {value}',
+  'require.php': 'require: php {value}',
+  'config.platform.php': 'config.platform.php: {value}',
+  lock: 'composer.lock',
+  'lock-dev': 'composer.lock (packages-dev)',
+  'platform.php': 'composer.lock, platform: php {value}',
+  'platform-overrides.php': 'composer.lock, platform-overrides: php {value}',
+  dependencies: 'dependencies: {value}',
+  devDependencies: 'devDependencies: {value}',
+  optionalDependencies: 'optionalDependencies: {value}',
+  'engines.node': 'engines.node: {value}',
+  form: 'wskazano w formularzu',
+};
+
+/** "HintPath: ..\packages\Newtonsoft.Json.6.0.4\lib\net45\Newtonsoft.Json.dll" */
+export function sourceText(source) {
+  const template = SOURCE_LABELS[source?.origin];
+  if (!template) return '';
+  let value = source.value;
+  // packages.config rows repeat the file name; the spec is already in the version column.
+  if (source.origin === 'packages-config') value = '';
+  // A NuGet HintPath is long; the packages folder is the part that identifies the package.
+  if (source.origin === 'hintpath') value = /packages[\\/][^\\/]+/i.exec(value)?.[0] ?? value;
+  return fill(template, { value }).replace(/:\s*$/, '');
+}
+
+// ── Page chrome ─────────────────────────────────────────────────────────────
+
+export const UI = {
+  statusParsing: 'Analizuję plik…',
+  statusOsv: 'Sprawdzam podatności w bazie OSV (zapytania: {count})…',
+  statusDone: 'Gotowe. Raport obejmuje {count} {noun}.',
+  statusUpdated: 'Raport zaktualizowany o wybrane serwery.',
+  statusSample: 'Wczytano przykładowy plik Sklep.Legacy.csproj.',
+  statusFile: 'Wczytano plik {name}.',
+  metaFormat: 'Plik: {format}.',
+  metaEol: 'Dane o końcu wsparcia: endoflife.date, stan na {date}.',
+  metaEolMissing: 'Dane o końcu wsparcia: niedostępne.',
+  metaOsv: 'Podatności: OSV.dev, sprawdzono {date}.',
+  metaOsvSkipped: 'Podatności: w pliku nie było pakietów do sprawdzenia.',
+  metaOsvError: 'Podatności: nie sprawdzono (brak połączenia z OSV).',
+  summaryTotal: 'Pozycji w raporcie: {count}. Jedna pozycja może należeć do kilku kategorii, np. być po końcu wsparcia i mieć znane podatności.',
+  tablePlatform: 'Framework, środowisko uruchomieniowe i serwery',
+  tableDependencies: 'Pakiety i biblioteki ({count})',
+  emptyPlatform: 'Plik nie określa frameworka ani środowiska uruchomieniowego.',
+  emptyDependencies: 'W pliku nie znaleziono pakietów ani bibliotek do sprawdzenia.',
+  emptyReport: 'W pliku nie znaleziono frameworka ani zależności do sprawdzenia.',
+  columns: { name: 'Nazwa', version: 'Wersja', status: 'Status', eol: 'Koniec wsparcia', advisories: 'Podatności' },
+  vulnerableCount: 'Znane podatności: {count}',
+  eolEnded: 'zakończone',
+  eolNotAnnounced: 'nie ogłoszono',
+  eolNoData: 'brak danych',
+  eolSource: 'źródło: endoflife.date',
+  notApplicable: 'nie dotyczy',
+  atLeast: 'co najmniej {version}',
+  constraint: 'ograniczenie: {spec}',
+  assemblyVersion: 'wersja zestawu: {version}',
+  fixedIn: 'Poprawka w wersji: {versions}',
+  severity: 'ważność: ',
+  newTab: ' (otwiera się w nowej karcie)',
+  showMore: 'Pokaż pozostałe ({count})',
+};
+
+export const format = fill;

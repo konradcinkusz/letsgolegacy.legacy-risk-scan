@@ -21,7 +21,10 @@ import { todayIso } from './eol.js';
  *   signal?: AbortSignal,
  *   onProgress?: (stage: 'parsed'|'osv', detail: object) => void,
  * }} options
- * @returns {Promise<{ ok: true, report: object } | { ok: false, error: { code: string, params: object } }>}
+ * @returns {Promise<{ ok: true, report: object, manifest: object, osv: object }
+ *                  | { ok: false, error: { code: string, params: object } }>}
+ *   manifest and osv are returned so the report can be rebuilt (rebuildReport) when only
+ *   the form's server choices change, without asking OSV again.
  */
 export async function runScan(text, { eolData, fetchImpl = globalThis.fetch, today = todayIso(), infra = {}, signal, onProgress } = {}) {
   let manifest;
@@ -48,11 +51,16 @@ export async function runScan(text, { eolData, fetchImpl = globalThis.fetch, tod
         osv = { state: 'error', errorKind: e.kind };
       }
     }
-    return { ok: true, report: buildReport(manifest, { eolData, osv, today, infra }) };
+    return { ok: true, report: buildReport(manifest, { eolData, osv, today, infra }), manifest, osv };
   } catch (e) {
     if (signal?.aborted) throw e;
     // A bug, not bad input. Logged locally for whoever opens the console; nothing is sent.
     globalThis.console?.error?.('Legacy Risk Scan: unexpected error', e);
     return { ok: false, error: { code: 'UNEXPECTED', params: {} } };
   }
+}
+
+/** The same scan's report with different server choices: no parsing, no network. */
+export function rebuildReport(previous, { eolData, today = todayIso(), infra = {} }) {
+  return buildReport(previous.manifest, { eolData, osv: previous.osv, today, infra });
 }
