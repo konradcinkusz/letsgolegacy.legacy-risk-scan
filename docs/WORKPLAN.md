@@ -36,9 +36,10 @@ page itself, which does not exist until the steps below.
 - **Nothing pasted leaves the browser except package coordinates.** The file is parsed
   client-side; only package names and versions are sent to the public vulnerability
   database (OSV). No analytics, no storage, and the page says so.
-- End-of-life data for frameworks and runtimes (.NET Framework, .NET, PHP, Angular,
-  AngularJS, SQL Server, Windows Server) is bundled and dated, so the report states how
-  fresh its data is.
+- End-of-life data for frameworks and runtimes (.NET Framework, .NET, PHP, Node.js,
+  Angular, AngularJS, Laravel, Symfony, SQL Server, Windows Server, and — when
+  endoflife.date has them — jQuery and Bootstrap) is bundled and dated, so the report
+  states how fresh its data is.
 - Static hosting (GitHub Pages); no server of our own.
 - The contact block is a placeholder until the company's domain and details exist
   (ticket L17).
