@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.1.1" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
+    <GlobalPackageReference Include="Nerdbank.GitVersioning" Version="3.6.133" />
+  </ItemGroup>
+</Project>

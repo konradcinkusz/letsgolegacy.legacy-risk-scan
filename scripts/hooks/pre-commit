@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+#
+# pre-commit — secret scan before anything becomes history.
+#
+# Installed by scripts/setup.sh into .git/hooks/. Mirrors .github/workflows/secret-scan.yml,
+# so a clean commit here means a clean scan there (P5 / REPO-BASELINE.md §2).
+#
+# DESIGN DECISION — this hook FAILS when no scanner is available. "Warn and continue"
+# would make the protection depend on the developer's toolchain, which is the "enforced
+# only by human recall" failure the baseline exists to prevent. `git commit --no-verify`
+# remains the (deliberately loud) escape hatch, and CI still scans every push.
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+CONFIG="${REPO_ROOT}/.gitleaks.toml"
+
+red()   { printf '\033[0;31m%s\033[0m\n' "$*"; }
+green() { printf '\033[0;32m%s\033[0m\n' "$*"; }
+
+if [ ! -f "${CONFIG}" ]; then
+  red "pre-commit: .gitleaks.toml is missing from the repository root — commit refused."
+  exit 1
+fi
+
+# gitleaks exits 1 both for a finding and for a usage error; a dedicated exit code for
+# findings keeps "the scanner broke" distinguishable from "a secret was found".
+LEAK_EXIT=2
+
+if command -v gitleaks >/dev/null 2>&1; then
+  set +e
+  if gitleaks git --help >/dev/null 2>&1; then
+    gitleaks git --staged "${REPO_ROOT}" --config="${CONFIG}" --redact --no-banner --exit-code "${LEAK_EXIT}"
+  else
+    gitleaks protect --staged --source="${REPO_ROOT}" --config="${CONFIG}" --redact --no-banner --exit-code "${LEAK_EXIT}"
+  fi
+  STATUS=$?
+  set -e
+elif command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+  set +e
+  docker run --rm -v "${REPO_ROOT}:/repo" -w /repo ghcr.io/gitleaks/gitleaks:latest \
+    git --staged /repo --config=/repo/.gitleaks.toml --redact --no-banner --exit-code "${LEAK_EXIT}"
+  STATUS=$?
+  set -e
+else
+  red "pre-commit: no secret scanner available — refusing to commit."
+  echo "Install gitleaks (https://github.com/gitleaks/gitleaks#installing) or start Docker,"
+  echo "then run: git commit"
+  exit 1
+fi
+
+if [ "${STATUS}" -eq 0 ]; then
+  green "pre-commit: secret scan clean."
+  exit 0
+fi
+if [ "${STATUS}" -ne "${LEAK_EXIT}" ]; then
+  red "pre-commit: the secret scanner failed to run (exit ${STATUS}) — commit refused."
+  echo "This is a tooling failure, not a finding. Reproduce: ./scripts/scan-secrets.sh --staged"
+  exit 1
+fi
+red "pre-commit: secrets detected in staged changes — commit refused."
+echo "If real: ROTATE it first, then remove it from the change. This repository holds no"
+echo "secrets of its own. If a false positive: add a narrow, commented allowlist entry to"
+echo ".gitleaks.toml — never by pasting the real value into a regex."
+exit 1

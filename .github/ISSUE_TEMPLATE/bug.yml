@@ -1,0 +1,24 @@
+name: Błąd w raporcie / Report bug
+description: The scan misread a file, crashed, or reported a wrong status.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not paste a customer's real project file.** Reduce it to the few lines that
+        reproduce the problem and remove names, paths and internal package feeds.
+  - type: textarea
+    id: input
+    attributes:
+      label: Minimal input
+      description: The smallest fragment of the file that reproduces the problem.
+      render: xml
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+      description: What the report said, and what it should have said (with a source, e.g. an OSV id or an endoflife.date page).
+    validations:
+      required: true

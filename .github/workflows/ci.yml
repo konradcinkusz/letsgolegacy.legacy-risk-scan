@@ -1,0 +1,52 @@
+name: CI
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  unit       — parsers, end-of-life mapping, OSV client, report; every PR and push.
+#  smoke-osv  — the REAL OSV API: CORS for the published origin, and the advisory the
+#               sample file is built to show. Blocking, except when OSV cannot be reached
+#               at all: a network error says nothing about this repository, so it is a
+#               warning; OSV answering differently from what the page assumes is a failure.
+#
+#  The weekly run exists because OSV can change under an unchanged repository.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '40 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: Unit tests (Node 22)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npm test
+
+  smoke-osv:
+    name: Smoke — real OSV API (non-blocking only for network errors)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: CORS and contract against api.osv.dev
+        id: osv
+        run: node scripts/smoke-osv.mjs

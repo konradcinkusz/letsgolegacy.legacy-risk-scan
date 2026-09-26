@@ -1,0 +1,16 @@
+{
+  "name": "legacy-risk-scan",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Legacy Risk Scan — a static page that reads a .csproj, packages.config, composer.json/lock or package.json in the browser and reports end-of-life and known vulnerabilities.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test --test-reporter=spec \"test/**/*.test.mjs\"",
+    "update-eol": "node scripts/update-eol.mjs",
+    "smoke:osv": "node scripts/smoke-osv.mjs"
+  }
+}
