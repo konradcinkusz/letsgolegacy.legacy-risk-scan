@@ -35,8 +35,18 @@ test('querybatch: one POST, deduplicated coordinates, no credentials, no referre
       { package: { ecosystem: 'npm', name: 'jquery' }, version: '1.10.2' },
     ],
   });
-  assert.deepEqual(ids.get('NuGet|newtonsoft.json|6.0.4'), ['GHSA-5crp-9r3c-p9vr']);
+  assert.deepEqual(ids.get('NuGet|Newtonsoft.Json|6.0.4'), ['GHSA-5crp-9r3c-p9vr']);
   assert.deepEqual(ids.get('npm|jquery|1.10.2'), []);
+});
+
+test('names are sent exactly as written: OSV matches NuGet ids case-sensitively', async () => {
+  const osv = fakeOsv({ byCoordinate: { 'NuGet|Newtonsoft.Json|6.0.4': ['GHSA-5crp-9r3c-p9vr'] } });
+  const lower = { ...NEWTONSOFT, name: 'newtonsoft.json' };
+  const ids = await queryVulnerabilities([NEWTONSOFT, lower, { ...NEWTONSOFT }], { fetchImpl: osv.fetchImpl });
+  const sent = JSON.parse(osv.calls[0].init.body).queries.map((q) => q.package.name);
+  assert.deepEqual(sent, ['Newtonsoft.Json', 'newtonsoft.json'], 'two questions, first spelling first, exact duplicate dropped');
+  assert.deepEqual(ids.get('NuGet|Newtonsoft.Json|6.0.4'), ['GHSA-5crp-9r3c-p9vr']);
+  assert.deepEqual(ids.get('NuGet|newtonsoft.json|6.0.4'), []);
 });
 
 test('querybatch: more coordinates than one batch allows are split', async () => {

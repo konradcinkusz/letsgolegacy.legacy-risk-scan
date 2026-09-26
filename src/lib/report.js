@@ -14,7 +14,7 @@
 // past its end of life with known vulnerabilities is both), which the page says.
 
 import { assessVersion, assessCycle } from './eol.js';
-import { coordinateKey, summarizeVulnerability, mergeAdvisories } from './osv.js';
+import { coordinateKey, summarizeVulnerability, mergeAdvisories, uniqueCoordinates } from './osv.js';
 import { productForPackage } from './known-libraries.js';
 import { numericParts } from './versions.js';
 
@@ -28,7 +28,7 @@ export function coordinatesFor(manifest) {
     coords.push({ ecosystem: p.ecosystem, name: p.name, version: p.version });
     if (p.alsoNpm) coords.push({ ecosystem: 'npm', name: p.alsoNpm, version: p.version });
   }
-  return [...new Map(coords.map((c) => [coordinateKey(c), c])).values()];
+  return uniqueCoordinates(coords);
 }
 
 function runtimeName(rt) {
@@ -46,8 +46,11 @@ function eolNotes(eol, today) {
   const notes = [];
   if (!eol) return notes;
   if (eol.status === 'no-data') notes.push({ code: 'EOL_NO_DATA', params: { product: eol.productLabel } });
-  if (eol.match === 'older-than-tracked') {
-    notes.push({ code: 'EOL_OLDER_THAN_TRACKED', params: { cycle: eol.cycleLabel, date: eol.olderThanDate } });
+  if (eol.match === 'older-than-cycle' && eol.status === 'eol') {
+    notes.push({
+      code: eol.olderThanDate ? 'EOL_OLDER_THAN_CYCLE' : 'EOL_OLDER_THAN_CYCLE_NODATE',
+      params: { cycle: eol.cycleLabel, date: eol.olderThanDate },
+    });
   }
   if (eol.status === 'eol' && eol.eoesDate) {
     notes.push({ code: eol.eoesDate > today ? 'EOL_ESU_UNTIL' : 'EOL_ESU_ENDED', params: { date: eol.eoesDate } });

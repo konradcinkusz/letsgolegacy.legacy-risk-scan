@@ -22,6 +22,7 @@ import { appendFileSync } from 'node:fs';
 import {
   OSV_API,
   OsvError,
+  coordinateKey,
   fetchVulnerabilityRecords,
   queryVulnerabilities,
   summarizeVulnerability,
@@ -101,11 +102,12 @@ async function main() {
     { ecosystem: 'Packagist', name: 'guzzlehttp/guzzle', version: '6.3.0' },
   ];
   const ids = await queryVulnerabilities(coords);
-  const list = coords.map((c) => ids.get(`${c.ecosystem}|${c.name.toLowerCase()}|${c.version}`) ?? []);
+  const list = coords.map((c) => ids.get(coordinateKey(c)) ?? []);
   coords.forEach((c, i) => console.log(`  ${c.ecosystem} ${c.name} ${c.version}: ${list[i].length} advisories ${list[i].slice(0, 6).join(' ')}`));
   expect(list[0].includes('GHSA-5crp-9r3c-p9vr'), 'NuGet Newtonsoft.Json 6.0.4 → GHSA-5crp-9r3c-p9vr (the sample relies on it)');
   expect(list[1].length > 0, 'npm jquery 1.10.2 has at least one advisory');
-  console.log(`info NuGet name matching is ${list[2].length === list[0].length ? 'case-insensitive' : 'case-sensitive'} at OSV`);
+  // Recorded, not asserted: coordinateKey() and the README rely on the answer.
+  console.log(`info NuGet name matching at OSV: "Newtonsoft.Json" → ${list[0].length}, "newtonsoft.json" → ${list[2].length} advisories (${list[2].length === list[0].length ? 'case-insensitive' : 'case-sensitive'})`);
 
   const records = await fetchVulnerabilityRecords(['GHSA-5crp-9r3c-p9vr']);
   const advisory = summarizeVulnerability('GHSA-5crp-9r3c-p9vr', records.get('GHSA-5crp-9r3c-p9vr'), [coords[0]]);

@@ -49,8 +49,12 @@ export function cycleStatus(cycle, today) {
 /**
  * The release cycle a version belongs to: the cycle whose name is the longest numeric
  * prefix of the version ("4.5.1" → "4.5.1" before "4.5"; "8.0" → "8"; "7.1.3" → "7.1").
- * A version older than every tracked cycle is reported as such — endoflife.date does not
- * list every ancient release, and "older than the oldest one listed" is still an answer.
+ *
+ * endoflife.date does not list every release — Laravel 5.6 sits between the listed 5.5
+ * and 5.8, and old releases eventually drop off. For an unlisted version the nearest
+ * NEWER listed cycle is returned as a reference ('older-than-cycle'): if even that one
+ * has ended, this older version has too. If it has not, the answer is "no data", not a
+ * guess.
  */
 export function findCycle(product, version) {
   const parts = numericParts(version);
@@ -69,11 +73,10 @@ export function findCycle(product, version) {
     if (!best || cp.length > best.len) best = { cycle, len: cp.length };
   }
   if (best) return { cycle: best.cycle, match: 'cycle' };
-  if (numbered.length && numbered.every((c) => compareParts(parts, c.cp) < 0)) {
-    const oldest = numbered.reduce((a, b) => (compareParts(a.cp, b.cp) <= 0 ? a : b));
-    return { cycle: oldest.cycle, match: 'older-than-tracked' };
-  }
-  return null;
+  const newer = numbered.filter((c) => compareParts(c.cp, parts) > 0);
+  if (!newer.length) return null;
+  const nearest = newer.reduce((a, b) => (compareParts(a.cp, b.cp) <= 0 ? a : b));
+  return { cycle: nearest.cycle, match: 'older-than-cycle' };
 }
 
 function describe(dataset, productId, cycle, match, today) {
@@ -91,11 +94,11 @@ function describe(dataset, productId, cycle, match, today) {
     eoesDate: typeof cycle.eoes === 'string' ? cycle.eoes : null,
     eoasPassed: isPast(cycle.eoas, today),
   };
-  if (match === 'older-than-tracked') {
-    // Only meaningful when even the oldest tracked cycle is already over.
-    const oldest = cycleStatus(cycle, today);
-    if (oldest.status !== 'eol') return { ...base, status: 'no-data', eolDate: null };
-    return { ...base, status: 'eol', eolDate: null, olderThanDate: oldest.eolDate };
+  if (match === 'older-than-cycle') {
+    // `cycle` is the nearest newer listed one: conclusive only if it has already ended.
+    const reference = cycleStatus(cycle, today);
+    if (reference.status !== 'eol') return { ...base, status: 'no-data', eolDate: null };
+    return { ...base, status: 'eol', eolDate: null, olderThanDate: reference.eolDate };
   }
   return { ...base, ...cycleStatus(cycle, today) };
 }

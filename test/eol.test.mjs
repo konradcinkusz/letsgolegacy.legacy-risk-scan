@@ -38,22 +38,41 @@ for (const [product, version, status, eolDate, cycle] of cases) {
 test('the longest matching cycle wins ("4.8.1" is not reported as "4.8")', () => {
   assert.equal(findCycle(data.products.dotnetfx, '4.8.1').cycle.name, '4.8.1');
   assert.equal(findCycle(data.products.dotnetfx, '4.8').cycle.name, '4.8');
-  assert.equal(findCycle(data.products.nodejs, '15.2.0'), null, 'between cycles, and "1" is not a prefix of "10"');
-  assert.equal(findCycle(data.products.nodejs, '1.0.0').match, 'older-than-tracked');
+  assert.equal(findCycle(data.products.nodejs, '15.2.0').match, 'older-than-cycle', 'between cycles: 22 is the reference');
+  assert.equal(findCycle(data.products.nodejs, '15.2.0').cycle.name, '22');
+  assert.equal(findCycle(data.products.nodejs, '1.0.0').match, 'older-than-cycle');
 });
 
 test('a short cycle name with more specific siblings means its .0 release ("4" is .NET Framework 4.0)', () => {
   assert.equal(findCycle(data.products.dotnetfx, '4.0').cycle.name, '4');
   assert.equal(findCycle(data.products.dotnetfx, '4.0.3').cycle.name, '4');
-  assert.equal(findCycle(data.products.dotnetfx, '4.7.2'), null);
+  assert.equal(findCycle(data.products.dotnetfx, '4.7.2').match, 'older-than-cycle', 'not reported as 4.0');
+  assert.equal(findCycle(data.products.dotnetfx, '4.7.2').cycle.name, '4.8');
   assert.equal(findCycle(data.products.jquery, '3.4.1').cycle.name, '3', 'without siblings "3" covers all of 3.x');
 });
 
-test('a version older than every tracked cycle is past its end of life', () => {
+test('a version older than every listed cycle is past its end of life', () => {
   const r = assessVersion(data, 'dotnetfx', '3.5', TODAY);
   assert.equal(r.status, 'eol');
-  assert.equal(r.match, 'older-than-tracked');
+  assert.equal(r.match, 'older-than-cycle');
+  assert.equal(r.cycle, '4', 'the nearest newer listed cycle is the reference');
   assert.equal(r.olderThanDate, '2016-01-12');
+});
+
+test('an unlisted version between listed cycles takes its end of life from the nearest newer one', () => {
+  const cycle = (name, eol) => ({ name, label: name, eol, eoas: null, eoes: null });
+  const laravel = { products: { laravel: { label: 'Laravel', link: '', cycles: [cycle('6', '2022-09-06'), cycle('5.8', '2020-02-26'), cycle('5.5', '2020-08-30')] } } };
+  const r = assessVersion(laravel, 'laravel', '5.6.0', TODAY);
+  assert.equal(r.status, 'eol');
+  assert.equal(r.match, 'older-than-cycle');
+  assert.equal(r.cycleLabel, '5.8');
+  assert.equal(r.olderThanDate, '2020-02-26');
+  assert.equal(r.eolDate, null, 'its own date is unknown and not invented');
+});
+
+test('an unlisted version whose newer neighbour is still supported has no data, not a guess', () => {
+  assert.equal(assessVersion(data, 'laravel', '5.7.0', TODAY).status, 'no-data', 'nearest newer is 12, still supported');
+  assert.equal(assessVersion(data, 'dotnet', '11.0', TODAY).status, 'no-data', 'newer than everything listed');
 });
 
 test('a version between tracked cycles has no data rather than a guess', () => {

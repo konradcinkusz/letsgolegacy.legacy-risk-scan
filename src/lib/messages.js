@@ -99,7 +99,8 @@ export function hintText(hint) {
 
 const NOTES = {
   EOL_NO_DATA: 'Brak danych o cyklu życia tej wersji w endoflife.date.',
-  EOL_OLDER_THAN_TRACKED: 'Wersja starsza niż najstarsza opisana w endoflife.date ({cycle}, wsparcie do {date}).',
+  EOL_OLDER_THAN_CYCLE: 'Tej wersji nie ma w endoflife.date, ale nowsza wersja {cycle} straciła wsparcie {date} — ta tym bardziej nie jest wspierana.',
+  EOL_OLDER_THAN_CYCLE_NODATE: 'Tej wersji nie ma w endoflife.date, ale nowsza wersja {cycle} straciła już wsparcie — ta tym bardziej nie jest wspierana.',
   EOL_ESU_UNTIL: 'Płatne rozszerzone aktualizacje bezpieczeństwa (ESU) są dostępne do {date} — tylko jeśli firma je wykupiła.',
   EOL_ESU_ENDED: 'Płatne rozszerzone aktualizacje bezpieczeństwa (ESU) również się zakończyły ({date}).',
   EOL_SECURITY_ONLY: 'Od {date} wydawane są już tylko poprawki bezpieczeństwa.',

@@ -31,7 +31,19 @@ export class OsvError extends Error {
 
 /** @typedef {{ ecosystem: string, name: string, version: string }} Coordinate */
 
-export const coordinateKey = (c) => `${c.ecosystem}|${c.name.toLowerCase()}|${c.version}`;
+/**
+ * Identity of a coordinate. Names are kept exactly as written: OSV matches NuGet ids
+ * case-sensitively (checked against the live API by scripts/smoke-osv.mjs), so
+ * "newtonsoft.json" and "Newtonsoft.Json" are different questions to OSV.
+ */
+export const coordinateKey = (c) => `${c.ecosystem}|${c.name}|${c.version}`;
+
+/** Coordinates without duplicates, first occurrence kept. */
+export function uniqueCoordinates(coords) {
+  const seen = new Map();
+  for (const c of coords) if (!seen.has(coordinateKey(c))) seen.set(coordinateKey(c), c);
+  return [...seen.values()];
+}
 
 /**
  * The request payload: exactly { package: { ecosystem, name }, version } per coordinate.
@@ -94,7 +106,7 @@ async function postBatch(fetchImpl, queries, signal) {
  * @returns {Promise<Map<string, string[]>>} coordinateKey → vulnerability ids
  */
 export async function queryVulnerabilities(coords, { fetchImpl = globalThis.fetch, signal } = {}) {
-  const unique = [...new Map(coords.map((c) => [coordinateKey(c), c])).values()];
+  const unique = uniqueCoordinates(coords);
   const found = new Map(unique.map((c) => [coordinateKey(c), new Set()]));
   for (let start = 0; start < unique.length; start += BATCH_LIMIT) {
     let pending = unique.slice(start, start + BATCH_LIMIT).map((c) => ({ coord: c, pageToken: undefined }));
