@@ -1,0 +1,99 @@
+name: Deploy to GitHub Pages
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  build   unit tests → the static site (dist/) → the mocked e2e suite against it →
+#          the Pages artifact. Nothing untested is published.
+#  deploy  actions/deploy-pages into the github-pages environment.
+#  verify  the PUBLISHED page with the real OSV API: waits until the site serves this
+#          commit (dist/build.json), then runs e2e/live.spec.mjs against it — the sample
+#          must produce a report with an end-of-life row and a real advisory — and keeps
+#          the full-page screenshot as the "live-verification" artifact. This is L18's
+#          "done when": the public page returns a report for the sample file.
+#
+#  One-time repository setting: Settings → Pages → Build and deployment → Source:
+#  "GitHub Actions". Without it configure-pages fails with a 404 and nothing in this
+#  workflow can fix that.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never cancel a deployment in progress: a half-published site is worse than a late one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Test and build the site
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - name: Build, then the e2e suite against the build (OSV mocked)
+        run: npm run e2e
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy to Pages
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
+
+  verify:
+    name: Verify the published page (real OSV)
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PAGE_URL: ${{ needs.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      - name: Wait until the published site serves this commit
+        run: node scripts/wait-for-deploy.mjs "$PAGE_URL" "$GITHUB_SHA"
+
+      - name: The sample on the published page, real OSV
+        env:
+          BASE_URL: ${{ needs.deploy.outputs.page_url }}
+          LIVE_SCREENSHOT: test-results/live-report.png
+        run: npm run e2e:live
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: live-verification
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 30

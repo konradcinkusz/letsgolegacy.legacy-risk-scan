@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { runScan } from '../src/lib/scan.js';
+import { rebuildReport, runScan } from '../src/lib/scan.js';
 import { fakeOsv, fixtureJson, osvRecord, sample } from './helpers.mjs';
 
 const eolData = fixtureJson('eol.fixture.json');
@@ -70,4 +70,13 @@ test('a superseded scan is cancelled, not reported', async () => {
   const pending = runScan(sample('Sklep.Legacy.csproj'), { eolData, fetchImpl: hanging, signal: controller.signal });
   controller.abort();
   await assert.rejects(pending, (e) => e.name === 'AbortError');
+});
+
+test('changing the server choices rebuilds the report without another request', async () => {
+  const osv = fakeOsv();
+  const first = await runScan(sample('Sklep.Legacy.csproj'), { eolData, fetchImpl: osv.fetchImpl, today: '2026-09-26' });
+  const calls = osv.calls.length;
+  const again = rebuildReport(first, { eolData, today: '2026-09-26', infra: { 'windows-server': '2012-r2' } });
+  assert.equal(again.summary.total, first.report.summary.total + 1);
+  assert.equal(osv.calls.length, calls, 'no new OSV traffic');
 });

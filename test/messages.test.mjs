@@ -48,6 +48,10 @@ test('notes and hints render their parameters, dates in Polish', () => {
     'Płatne rozszerzone aktualizacje bezpieczeństwa (ESU) są dostępne do 13 października 2026 — tylko jeśli firma je wykupiła.',
   );
   assert.equal(hintText({ code: 'HINT_PLATFORM_PACKAGES', params: { names: ['ext-pdo', 'ext-json'] } }), 'Pominięto wymagania platformy (rozszerzenia PHP i podobne): ext-pdo, ext-json.');
+  assert.match(hintText({ code: 'HINT_FRAMEWORK_REFERENCES', params: { count: 22 } }), /^Pominięto 22 referencje do bibliotek/);
+  assert.match(hintText({ code: 'HINT_FRAMEWORK_REFERENCES', params: { count: 5 } }), /^Pominięto 5 referencji do bibliotek/);
+  assert.equal(hintText({ code: 'HINT_PROJECT_REFERENCES', params: { count: 1 } }), 'Projekt odwołuje się do 1 innego projektu w tym samym rozwiązaniu. Sprawdź także jego plik .csproj.');
+  assert.equal(hintText({ code: 'HINT_PROJECT_REFERENCES', params: { count: 3 } }), 'Projekt odwołuje się do 3 innych projektów w tym samym rozwiązaniu. Sprawdź także ich pliki .csproj.');
   for (const format of ['msbuild-legacy', 'msbuild-sdk', 'cpm-props', 'packages-config', 'composer-json', 'composer-lock', 'package-json']) {
     assert.ok(FORMAT_LABELS[format], format);
   }

@@ -44,8 +44,14 @@ if ! command -v gitleaks >/dev/null 2>&1 && ! (command -v docker >/dev/null 2>&1
   amber "  (That is deliberate — P5.) https://github.com/gitleaks/gitleaks#installing"
 fi
 
+step "4. Optional — a browser for the end-to-end tests (needed for: npm run e2e)"
+echo "  npx playwright install chromium"
+
 step "Ready"
+echo "  npm start              build and serve on http://127.0.0.1:4173/letsgolegacy.legacy-risk-scan/"
 echo "  npm test               unit tests (parsers, end-of-life mapping, OSV client, report)"
+echo "  npm run e2e            Playwright against the built page, OSV mocked"
+echo "  npm run e2e:live       the built page against the real OSV API"
 echo "  npm run update-eol     refresh data/eol.json from endoflife.date"
 echo "  npm run smoke:osv      check the real OSV API (CORS + contract)"
 echo "  ./scripts/scan-secrets.sh   mirror the CI secret scan"
