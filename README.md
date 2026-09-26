@@ -26,10 +26,11 @@ column for XML and JSON) — never in an exception.
 ## Privacy, by construction
 
 - The pasted file is parsed **in the browser**. Nothing is uploaded.
-- The only outbound request is to the public [OSV.dev](https://osv.dev) API, and its body
-  is built by one function, `toQueries()` in [`src/lib/osv.js`](src/lib/osv.js):
-  `{ package: { ecosystem, name }, version }` per package and nothing else. Tests assert
-  that exact shape.
+- Outbound requests go to the public [OSV.dev](https://osv.dev) API only: one `querybatch`
+  POST whose body is built by one function, `toQueries()` in
+  [`src/lib/osv.js`](src/lib/osv.js) — `{ package: { ecosystem, name }, version }` per
+  package and nothing else — then one GET per advisory OSV returned, by the id OSV gave.
+  Tests assert that exact shape.
 - The page's Content-Security-Policy lets the browser connect to the page itself and to
   `api.osv.dev` only, and load no script, style or font from anywhere else.
 - No analytics, no cookies, no browser storage. The e2e suite asserts all of this against
