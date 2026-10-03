@@ -9,6 +9,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { validateDataset } from '../scripts/lib/eol-source.mjs';
+import { KEY_DATES, keyDatesTable } from '../scripts/lib/key-dates.mjs';
 import { assessVersion } from '../src/lib/eol.js';
 import { parseTargetFramework } from '../src/lib/frameworks.js';
 
@@ -43,4 +44,20 @@ test('the server lists the form offers are present', () => {
   const labels = (id) => data.products[id].cycles.map((c) => c.label).join(' | ');
   for (const year of ['2012', '2014', '2016', '2017', '2019', '2022']) assert.match(labels('mssqlserver'), new RegExp(year));
   for (const year of ['2012 R2', '2016', '2019', '2022']) assert.match(labels('windows-server'), new RegExp(year));
+});
+
+// The refresh prints these dates for review but never asserts them, so a cycle that
+// endoflife.date renames would otherwise drop out of the table without any error.
+test('the key-dates table has rows for every product it covers', () => {
+  const lines = keyDatesTable(data.products).split('\n');
+  for (const id of ['dotnetfx', 'dotnet', 'mssqlserver', 'windows-server', 'php']) {
+    assert.ok(lines.some((line) => line.startsWith(`| ${id} |`)), `${id}: no row in the key-dates table; was a cycle renamed? See scripts/lib/key-dates.mjs`);
+  }
+});
+
+test('every cycle named in the key-dates list exists in the committed data', () => {
+  for (const [id, names] of KEY_DATES) {
+    const have = (data.products[id]?.cycles ?? []).map((c) => c.name);
+    for (const name of names) assert.ok(have.includes(name), `${id}: no cycle named "${name}"; the data has ${have.join(', ')}`);
+  }
 });
