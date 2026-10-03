@@ -27,6 +27,7 @@ import {
   sameContent,
   validateDataset,
 } from './lib/eol-source.mjs';
+import { keyDatesTable } from './lib/key-dates.mjs';
 
 const { values: args } = parseArgs({
   options: {
@@ -122,22 +123,9 @@ if (unchanged && args['keep-date-if-unchanged']) data.generatedAt = previous.gen
 await mkdir(dirname(args.out), { recursive: true });
 await writeFile(args.out, `${JSON.stringify(data, null, 2)}\n`);
 
-// Dates worth a human glance in the pull request: the ones a sales conversation is
-// most likely to quote. Printed, never asserted — endoflife.date is the authority.
-const KEY_DATES = [
-  ['dotnetfx', ['4.5.2', '4.6', '4.6.1', '4.6.2', '4.8']],
-  ['dotnet', ['6', '8', '9', '10']],
-  ['mssqlserver', ['2014', '2016', '2017', '2019']],
-  ['windows-server', ['2012', '2012-R2', '2012-r2', '2016', '2019']],
-  ['php', ['7.4', '8.1', '8.2']],
-];
-const rows = [];
-for (const [id, names] of KEY_DATES) {
-  for (const c of products[id]?.cycles ?? []) {
-    if (names.includes(c.name)) rows.push(`| ${id} | ${c.label} | ${c.eol} | ${c.eoes ?? '—'} |`);
-  }
-}
-const table = ['| product | cycle | end of support (eol) | extended/ESU (eoes) |', '|---|---|---|---|', ...rows].join('\n');
+// Dates worth a human glance in the pull request. Printed, never asserted — endoflife.date
+// is the authority; which cycles are listed is in scripts/lib/key-dates.mjs.
+const table = keyDatesTable(products);
 console.log(`\nwrote ${args.out} (${unchanged ? 'content unchanged' : 'content changed'}, date ${data.generatedAt})\n\n${table}`);
 if (process.env.GITHUB_STEP_SUMMARY) {
   appendFileSync(
