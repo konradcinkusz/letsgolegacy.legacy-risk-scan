@@ -770,7 +770,7 @@ td.col-advisories {
     color: inherit;
   }
 
-  .advisory-id a::after {
+  a.advisory-id::after {
     content: ' (' attr(href) ')';
     font-weight: 400;
     font-size: 0.8em;

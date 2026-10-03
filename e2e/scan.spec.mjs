@@ -197,6 +197,20 @@ test('a phone-width screen (390 px): no horizontal scrolling, rows become cards'
   await expect(page.locator('thead').first()).toHaveCSS('position', 'absolute');
 });
 
+test('print: an advisory link is followed by its URL, which the screen does not show', async ({ page }) => {
+  await mockOsv(page);
+  await openAndRunSample(page);
+
+  const url = 'https://osv.dev/vulnerability/GHSA-5crp-9r3c-p9vr';
+  const advisory = page.getByRole('link', { name: /GHSA-5crp-9r3c-p9vr/ });
+  await expect(advisory).toHaveAttribute('href', url);
+  const afterContent = () => advisory.evaluate((a) => getComputedStyle(a, '::after').content);
+
+  expect(await afterContent()).not.toContain(url);
+  await page.emulateMedia({ media: 'print' });
+  expect(await afterContent()).toContain(url);
+});
+
 const seriousViolations = (results) =>
   results.violations
     .filter((v) => v.impact === 'serious' || v.impact === 'critical')
