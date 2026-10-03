@@ -9,27 +9,28 @@ Ticket ID matches the cross-repository backlog.
 
 | ID | Deliverable | Done when | Status |
 |---|---|---|---|
-| L18 | Paste `.csproj` / `packages.config` / `composer.json` → EOL and CVE report → call to action for an audit | The public page returns a report for the sample file | merged (#1, #2); done when `deploy.yml`'s `verify` job passes — waiting on step 1 below |
+| L18 | Paste `.csproj` / `packages.config` / `composer.json` → EOL and CVE report → call to action for an audit | The public page returns a report for the sample file | done: published since 26 IX 2026, and `deploy.yml`'s `verify` job passes (run 37116401196 on 4f4e346); two steps below stay open |
 
-### L18 — what remains after the merge
+### L18 — what remains
 
-Implemented in two stacked pull requests: #1 (engine, end-of-life data pipeline,
-baseline) and #2 (the page, deployment, end-to-end tests). Checked in CI before review:
-the sample produces a report with end-of-life rows and a real OSV advisory in a real
-browser, and OSV answers CORS for the published origin. Not yet checked: the published
-page itself, which does not exist until the steps below.
+Implemented in two stacked pull requests: #1 (engine, end-of-life data pipeline, baseline)
+and #2 (the page, deployment, end-to-end tests). The page is published at
+<https://konradcinkusz.github.io/letsgolegacy.legacy-risk-scan/>. Every push to `main` runs
+`deploy.yml`, whose `verify` job loads the **published** page, runs the sample against the
+real OSV API and keeps a full-page screenshot (artifact `live-verification`). It passes (run
+37116401196 on 4f4e346), so the "done when" is met.
 
-1. *Settings → Pages → Build and deployment → Source → GitHub Actions* (one time).
+1. ~~*Settings → Pages → Build and deployment → Source → GitHub Actions* (one time).~~ Done;
+   the first successful deploy was on 26 IX 2026.
 2. ~~Merge #1, then #2.~~ Done on 26 IX 2026. The first `deploy.yml` run on `main` failed at
    `configure-pages` with a 404, as expected before step 1.
-3. The push to `main` runs `deploy.yml`. Its `verify` job loads the **published** page,
-   runs the sample against the real OSV API and keeps a full-page screenshot
-   (artifact `live-verification`). When it passes, the "done when" is met: mark L18
-   **done**.
-4. For the monthly end-of-life data pull request: *Settings → Actions → General → Allow
-   GitHub Actions to create and approve pull requests*.
-5. When L17 delivers the domain and contact e-mail, replace the `TODO(L17)` placeholder in
-   `src/index.html` ("Kontakt: wkrótce").
+3. ~~The push to `main` runs `deploy.yml`; its `verify` job passes.~~ Done, see above.
+4. **Open:** for the monthly end-of-life data pull request: *Settings → Actions → General →
+   Allow GitHub Actions to create and approve pull requests*. The scheduled run of 1 X 2026
+   fetched and tested the data but failed at "Open or update the pull request" without it;
+   the data in `data/eol.json` (3 X 2026) came from the `sync-pr` job of a pull request.
+5. **Open:** when L17 delivers the domain and contact e-mail, replace the `TODO(L17)`
+   placeholder in `src/index.html` ("Kontakt: wkrótce").
 
 ## Design constraints
 

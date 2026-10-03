@@ -116,6 +116,9 @@ Actions.* Without it the first deploy fails at `configure-pages` with a 404.
   allowed version; the installed one may be newer. Lock files give exact results.
 - Hand-copied DLLs and GAC components cannot be checked automatically; they are listed as
   needing manual review rather than guessed at.
+- **Print and PDF show the first three advisories of each component.** The rest sit in a
+  collapsed "Pokaż pozostałe" section, which a browser does not print until it is opened; the
+  counter "Znane podatności: N" still shows the full number. Open the section before printing.
 
 ## Layout
 
